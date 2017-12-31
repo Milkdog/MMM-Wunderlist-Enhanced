@@ -71,6 +71,10 @@ Module.register("MMM-Wunderlist-Enhanced", {
       }
     );
 
+    tasks.sort(function (a, b) {
+      return moment(a.due_date).format('X') - moment(b.due_date).format('X');
+    });
+
     return tasks;
   },
 
@@ -87,6 +91,7 @@ Module.register("MMM-Wunderlist-Enhanced", {
     row: '<tr class="{0}">{1}</tr>',
     tdAssignee: '<td class="light">{0}</td>',
     tdDeadline: '<td class="light">{0}</td>',
+    tdDeadlinePast: '<td class="light bright">{0}</td>',
     tdBullet: '<td>{0}</td>',
     tdContent: '<td class="title {0}">{1}</td>',
     star: '<i class="fa fa-star fa-fw" aria-hidden="true"></i>',
@@ -154,6 +159,12 @@ Module.register("MMM-Wunderlist-Enhanced", {
           relativeDate = this.capFirst(this.translate("TOMORROW"));
         } else {
           relativeDate = this.capFirst(moment(todoDate, "x").fromNow());
+
+          // Due date has past
+          if (moment(todoDate).isBefore(now, 'day')) {
+            tds += self.html.tdDeadlinePast.format(relativeDate);
+            return self.html.row.format("", tds);
+          }
         }
 
         tds += self.html.tdDeadline.format(relativeDate);
