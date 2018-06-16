@@ -21,6 +21,7 @@ Module.register("MMM-Wunderlist-Enhanced", {
     relativeDates: true,
     showDeadline: true,
     showAssignee: true,
+    deadlineFormat: 'L',
     showBullets: false,
     // left, right, inline_left, inline_right, none
     iconPosition: "left",
@@ -57,6 +58,7 @@ Module.register("MMM-Wunderlist-Enhanced", {
   },
 
   getTodos: function() {
+    console.log(this.tasks);
     var tasks = [];
     this.config.lists.forEach((listValue, listKey) => {
       let list = this.tasks[listValue];
@@ -71,9 +73,21 @@ Module.register("MMM-Wunderlist-Enhanced", {
       }
     );
 
-    tasks.sort(function (a, b) {
-      return moment(a.due_date).format('X') - moment(b.due_date).format('X');
-    });
+     tasks.sort(function (a, b) {
+       if (a.original_due_date && !!b.original_due_date) {
+         return 1;
+       }
+
+       if (!!a.original_due_date && b.original_due_date) {
+         return -1;
+       }
+
+       if (!!a.original_due_date && !!b.original_due_date) {
+	 return 0;
+       }
+
+       return moment(a.original_due_date).format('X') - moment(b.original_due_date).format('X');
+     });
 
     return tasks;
   },
@@ -113,7 +127,7 @@ Module.register("MMM-Wunderlist-Enhanced", {
     if (starred)
       return this.html.star;
 
-    if (!this.config.showBullets) 
+    if (!this.config.showBullets)
       return this.html.bullet_none;
 
     if (this.config.iconPosition == "right" || this.config.iconPosition == "inline_right")
@@ -137,7 +151,7 @@ Module.register("MMM-Wunderlist-Enhanced", {
       if (self.config.iconPosition == "left") {
         tds = bulletTd + tds;
       } else {
-        tds = tds + bulletTd; 
+        tds = tds + bulletTd;
       }
     }
 
@@ -174,7 +188,7 @@ Module.register("MMM-Wunderlist-Enhanced", {
           : '');
       }
     }
-    
+
     return self.html.row.format("", tds);
   },
 

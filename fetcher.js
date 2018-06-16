@@ -3,11 +3,12 @@
 /* Magic Mirror
  * Fetcher
  *
- * By Michael Teeuw http://michaelteeuw.nl edited for Wunderlist by Marcin Bielecki and Dave Richer
+ * By Michael Teeuw http://michaelteeuw.nl edited for Wunderlist by Marcin Bielecki
  * MIT Licensed.
  */
 
 var WunderlistSDK = require('wunderlist');
+var moment = require('moment');
 
 /* Fetcher
  * Responsible for requesting an update on the set interval and broadcasting the data.
@@ -16,7 +17,10 @@ var WunderlistSDK = require('wunderlist');
  * attribute reloadInterval number - Reload interval in milliseconds.
  */
 
-var Fetcher = function (listID, listFrom, reloadInterval, accessToken, clientID) {
+var Fetcher = function (listID, listFrom, reloadInterval, accessToken, clientID, language, format) {
+
+  moment.locale(language);
+
   var self = this;
   if (reloadInterval < 1000) {
     reloadInterval = 1000;
@@ -43,24 +47,38 @@ var Fetcher = function (listID, listFrom, reloadInterval, accessToken, clientID)
       clientID: clientID
     });
 
-    WunderlistAPI.initialized.done(function () {
     WunderlistAPI.http.tasks.forList(listID)
       .done(function (tasks) {
-        items = tasks.map(task => Object.assign(task, {listFrom}));
+        items = localizeTasks(tasks, listFrom);
         self.broadcastItems();
         scheduleTimer();
       })
       .fail(function (resp, code) {
         console.error('there was a Wunderlist problem', resp, code);
       });
-    });
-
 
   };
+
+  /* localizeTasks(tasks)
+   * Localize the given array of tasks
+   */
+
+  var localizeTasks = function (tasks, listFrom) {
+    tasks.forEach(function (task) {
+      if (task.due_date) {
+	task.original_due_date = task.due_date;
+        task.due_date = moment(task.due_date).format(format);
+      }
+      task.created_at = moment(task.created_at).format(format);
+      task.listFrom = listFrom;
+    });
+    return tasks;
+  }
 
   /* scheduleTimer()
    * Schedule the timer for the next update.
    */
+
   var scheduleTimer = function () {
     clearTimeout(reloadTimer);
     reloadTimer = setTimeout(function () {
